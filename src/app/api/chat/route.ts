@@ -58,12 +58,19 @@ export async function POST(request: NextRequest) {
       .map((c, i) => `[${i + 1}] "${c.chunk_text}" (Source: ${c.metadata.title} - ${c.metadata.source}, ${c.metadata.url})`)
       .join('\n\n');
 
-    const sources = chunks.map(c => ({
-      title: c.metadata.title,
-      url: c.metadata.url,
-      source: c.metadata.source,
-      similarity: Math.round(c.similarity * 100) / 100,
-    }));
+    const seen = new Set<string>();
+    const sources = chunks
+      .filter(c => {
+        if (seen.has(c.metadata.url)) return false;
+        seen.add(c.metadata.url);
+        return true;
+      })
+      .map(c => ({
+        title: c.metadata.title,
+        url: c.metadata.url,
+        source: c.metadata.source,
+        similarity: Math.round(c.similarity * 100) / 100,
+      }));
 
     // Generate answer with citations
     const messages: OpenAI.ChatCompletionMessageParam[] = [
