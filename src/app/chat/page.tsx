@@ -146,11 +146,9 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    const userMessage = input.trim();
+  async function handleSend(text: string) {
+    if (!text.trim() || loading) return;
+    const userMessage = text.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
@@ -170,6 +168,11 @@ export default function ChatPage() {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
     }
     setLoading(false);
+  }
+
+  function sendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    handleSend(input);
   }
 
   const suggestions = [
@@ -247,7 +250,7 @@ export default function ChatPage() {
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 }}>
               {suggestions.map((s, i) => (
-                <button key={i} onClick={() => { setInput(s); }}
+                <button key={i} onClick={() => { handleSend(s); }}
                   style={{
                     padding: '10px 18px', background: 'var(--color-white)',
                     border: '1px solid rgba(0,0,0,0.08)', borderRadius: 24,
