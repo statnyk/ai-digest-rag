@@ -7,7 +7,12 @@
       "Bash(yes \"\")",
       "Bash(npm uninstall:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh repo:*)",
+      "Bash(vercel:*)",
+      "Bash(neonctl:*)",
+      "Bash(PGSSL=require psql \"postgresql://neondb_owner:npg_otTj3J4sQEmY@ep-rapid-base-akik518j.c-3.us-west-2.aws.neon.tech/neondb?sslmode=require\" -f /Users/aurelstatnik/Documents/LockIn/ai-digest-rag/supabase/migrations/001_create_articles.sql 2>&1)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\(''''message'''',{}\\).get\\(''''content'''',[{}]\\)[0].get\\(''''type'''',''''unknown''''\\)\\)\")"
     ]
   }
 }
