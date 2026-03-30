@@ -53,30 +53,44 @@ export async function POST(request: NextRequest) {
     // Search for relevant chunks
     const chunks = await searchChunks(questionEmbedding);
 
-    // Build context from retrieved chunks
-    const context = chunks
-      .map((c, i) => `[${i + 1}] "${c.chunk_text}" (Source: ${c.metadata.title} - ${c.metadata.source}, ${c.metadata.url})`)
-      .join('\n\n');
+    // Deduplicate chunks by URL, keeping highest similarity per article
+    const urlToChunks = new Map<string, { chunks: ChunkResult[]; bestSimilarity: number }>();
+    for (const c of chunks) {
+      const url = c.metadata.url;
+      const existing = urlToChunks.get(url);
+      if (existing) {
+        existing.chunks.push(c);
+        existing.bestSimilarity = Math.max(existing.bestSimilarity, c.similarity);
+      } else {
+        urlToChunks.set(url, { chunks: [c], bestSimilarity: c.similarity });
+      }
+    }
 
-    const seen = new Set<string>();
-    const sources = chunks
-      .filter(c => {
-        if (seen.has(c.metadata.url)) return false;
-        seen.add(c.metadata.url);
-        return true;
-      })
-      .map(c => ({
-        title: c.metadata.title,
-        url: c.metadata.url,
-        source: c.metadata.source,
-        similarity: Math.round(c.similarity * 100) / 100,
-      }));
+    // Build deduplicated sources list and context with matching indices
+    const sources: { title: string; url: string; source: string; similarity: number }[] = [];
+    const contextParts: string[] = [];
+
+    for (const [, entry] of urlToChunks) {
+      const sourceIndex = sources.length + 1;
+      const representative = entry.chunks[0];
+      sources.push({
+        title: representative.metadata.title,
+        url: representative.metadata.url,
+        source: representative.metadata.source,
+        similarity: Math.round(entry.bestSimilarity * 100) / 100,
+      });
+      // Combine all chunks from same article under one source number
+      const combinedText = entry.chunks.map(c => c.chunk_text).join(' ... ');
+      contextParts.push(`[${sourceIndex}] "${combinedText}" (Source: ${representative.metadata.title} - ${representative.metadata.source}, ${representative.metadata.url})`);
+    }
+
+    const context = contextParts.join('\n\n');
 
     // Generate answer with citations
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: `You are an AI news research assistant. Answer questions based on the provided article excerpts. Always cite your sources using [1], [2], etc. matching the source numbers. If the context doesn't contain relevant information, say so honestly. Keep answers concise and informative.
+        content: `You are an AI news research assistant. Answer questions based on the provided article excerpts. Always cite your sources using [1], [2], etc. matching the source numbers provided. Only use source numbers that exist in the list below. If the context doesn't contain relevant information, say so honestly. Keep answers concise and informative.
 
 Retrieved article excerpts:
 ${context}`,
