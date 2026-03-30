@@ -10,15 +10,27 @@ const RSS_FEEDS = [
 
 const parser = new Parser();
 
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
 function normalizeArticle(item: Parser.Item, source: string, category: string) {
   return {
-    title: item.title || 'Untitled',
+    title: decodeHtmlEntities(item.title || 'Untitled'),
     url: item.link || '',
     source,
     published_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
     category,
-    summary: item.contentSnippet?.slice(0, 500) || '',
-    content: item.content || item.contentSnippet || '',
+    summary: decodeHtmlEntities(item.contentSnippet?.slice(0, 500) || ''),
+    content: decodeHtmlEntities(item.content || item.contentSnippet || ''),
   };
 }
 
