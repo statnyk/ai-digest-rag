@@ -1,0 +1,36 @@
+{
+  "name": "RAG Chat Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT chunk_text, metadata FROM article_chunks ORDER BY embedding <=> (SELECT embedding FROM article_chunks LIMIT 1) LIMIT 5"
+      },
+      "name": "Vector Search",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": { "values": [{ "content": "You are an AI news assistant. Answer based on the provided context. Cite sources with URLs.\n\nContext: {{$json.context}}\n\nQuestion: {{$json.chatInput}}" }] }
+      },
+      "name": "OpenAI Chat",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": { "main": [[{ "node": "Vector Search", "type": "main", "index": 0 }]] },
+    "Vector Search": { "main": [[{ "node": "OpenAI Chat", "type": "main", "index": 0 }]] }
+  }
+}

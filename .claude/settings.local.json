@@ -4,7 +4,10 @@
       "Bash(brew install:*)",
       "Bash(pdftoppm -v)",
       "Bash(pdftotext:*)",
-      "Bash(yes \"\")"
+      "Bash(yes \"\")",
+      "Bash(npm uninstall:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -1,0 +1,49 @@
+{
+  "name": "RSS to Database - AI News Digest",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] } },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": { "url": "https://techcrunch.com/category/artificial-intelligence/feed/", "options": {} },
+      "name": "RSS TechCrunch",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": { "url": "https://feeds.arstechnica.com/arstechnica/technology-lab", "options": {} },
+      "name": "RSS Ars Technica",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 400]
+    },
+    {
+      "parameters": { "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", "options": {} },
+      "name": "RSS The Verge",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [500, 600]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO articles (title, url, source, published_at, category, summary, content) VALUES ('{{$json.title}}', '{{$json.link}}', '{{$node.name}}', '{{$json.pubDate}}', 'ai', '{{$json.contentSnippet}}', '{{$json.content}}') ON CONFLICT (url) DO NOTHING"
+      },
+      "name": "Postgres Insert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [800, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": { "main": [[{ "node": "RSS TechCrunch", "type": "main", "index": 0 }, { "node": "RSS Ars Technica", "type": "main", "index": 0 }, { "node": "RSS The Verge", "type": "main", "index": 0 }]] },
+    "RSS TechCrunch": { "main": [[{ "node": "Postgres Insert", "type": "main", "index": 0 }]] },
+    "RSS Ars Technica": { "main": [[{ "node": "Postgres Insert", "type": "main", "index": 0 }]] },
+    "RSS The Verge": { "main": [[{ "node": "Postgres Insert", "type": "main", "index": 0 }]] }
+  }
+}

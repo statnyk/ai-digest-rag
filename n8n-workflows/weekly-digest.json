@@ -1,0 +1,35 @@
+{
+  "name": "Weekly Digest Generator",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 9 * * 1" }] } },
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, title, url, source, published_at, category, summary FROM articles WHERE published_at >= NOW() - INTERVAL '7 days' ORDER BY category, published_at DESC"
+      },
+      "name": "Fetch Articles",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = $input.all();\nconst grouped = {};\nfor (const item of articles) {\n  const cat = item.json.category || 'general';\n  if (!grouped[cat]) grouped[cat] = [];\n  grouped[cat].push(item.json);\n}\nlet md = '# AI News Weekly Digest\\n\\n';\nfor (const [cat, items] of Object.entries(grouped)) {\n  md += `### ${cat.toUpperCase()}\\n\\n`;\n  for (const a of items) {\n    md += `- **[${a.title}](${a.url})**\\n  ${a.summary?.slice(0,200) || ''}\\n  *${a.source}*\\n\\n`;\n  }\n}\nreturn [{ json: { markdown: md } }];"
+      },
+      "name": "Generate Markdown",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Weekly Schedule": { "main": [[{ "node": "Fetch Articles", "type": "main", "index": 0 }]] },
+    "Fetch Articles": { "main": [[{ "node": "Generate Markdown", "type": "main", "index": 0 }]] }
+  }
+}
